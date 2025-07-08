@@ -22,10 +22,25 @@ const createCsvWriter = csvWriter.createObjectCsvWriter({
   ],
 });
 
+// Helper function to get real IP address
+function getRealIP(req) {
+  return (
+    req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
+    req.headers["x-real-ip"] ||
+    req.headers["x-client-ip"] ||
+    req.connection.remoteAddress ||
+    req.socket.remoteAddress ||
+    (req.connection.socket ? req.connection.socket.remoteAddress : null) ||
+    req.ip ||
+    "unknown"
+  );
+}
+
 // Helper function to log bot detection to CSV
 async function logBotDetection(req, botType, detected) {
+  const realIP = getRealIP(req);
   const data = {
-    ip: req.ip || req.connection.remoteAddress || "unknown",
+    ip: realIP,
     user_agent: req.get("User-Agent") || "",
     timestamp: new Date().toISOString(),
     url: `${req.protocol}://${req.get("host")}${req.originalUrl}`,
@@ -43,11 +58,16 @@ async function logBotDetection(req, botType, detected) {
 
   try {
     await createCsvWriter.writeRecords([data]);
-    console.log("CSV log written successfully");
+    console.log(
+      `CSV log written successfully - IP: ${realIP}, Bot: ${botType}, Detected: ${detected}`
+    );
   } catch (error) {
     console.error("Error writing to CSV:", error);
   }
 }
+
+// Trust proxy to get real IP addresses
+app.set("trust proxy", true);
 
 // Middleware
 app.use(cors());
@@ -57,7 +77,12 @@ app.use(express.urlencoded({ extended: true }));
 // Home page with AI Bot Detection (ChatGPT, Gemini & Claude)
 app.get("/", async (req, res) => {
   const userAgent = req.get("User-Agent") || "";
-  console.log(`User-Agent: ${userAgent}`);
+  const clientIP = getRealIP(req);
+
+  console.log(
+    `Request received from IP: ${clientIP}, User-Agent: ${userAgent}`
+  );
+
   const isChatGPT =
     userAgent.includes("ChatGPT-User/1.0; +https://openai.com/bot") ||
     userAgent.includes("GPTBot");
@@ -66,7 +91,6 @@ app.get("/", async (req, res) => {
     userAgent.includes("Claude-User/1.0; +Claude-User@anthropic.com") ||
     userAgent.includes("Claude-User");
 
-  console.log(`Request received from User-Agent: ${userAgent}`);
   console.log(`Is ChatGPT Bot: ${isChatGPT}`);
   console.log(`Is Gemini Bot: ${isGemini}`);
   console.log(`Is Claude Bot: ${isClaude}`);
@@ -77,6 +101,7 @@ app.get("/", async (req, res) => {
       success: true,
       botType: "ChatGPT",
       message: "ChatGPT bot detected successfully!",
+      clientIP: clientIP,
       userAgent: userAgent,
       timestamp: new Date().toISOString(),
       endpoint: "Home page (/) - AI Bot Detection Active",
@@ -88,6 +113,7 @@ app.get("/", async (req, res) => {
       success: true,
       botType: "Gemini",
       message: "Gemini bot detected successfully!",
+      clientIP: clientIP,
       userAgent: userAgent,
       timestamp: new Date().toISOString(),
       endpoint: "Home page (/) - AI Bot Detection Active",
@@ -99,6 +125,7 @@ app.get("/", async (req, res) => {
       success: true,
       botType: "Claude",
       message: "Claude bot detected successfully!",
+      clientIP: clientIP,
       userAgent: userAgent,
       timestamp: new Date().toISOString(),
       endpoint: "Home page (/) - AI Bot Detection Active",
@@ -109,6 +136,7 @@ app.get("/", async (req, res) => {
     res.status(200).json({
       success: false,
       message: "No AI bot detected",
+      clientIP: clientIP,
       userAgent: userAgent,
       timestamp: new Date().toISOString(),
       endpoint: "Home page (/) - AI Bot Detection Active",
@@ -163,6 +191,21 @@ app.get("/health", (req, res) => {
     status: "OK",
     message: "Server is running",
     timestamp: new Date().toISOString(),
+  });
+});
+
+// IP information endpoint
+app.get("/ip", (req, res) => {
+  const clientIP = getRealIP(req);
+  res.status(200).json({
+    clientIP: clientIP,
+    userAgent: req.get("User-Agent") || "",
+    timestamp: new Date().toISOString(),
+    headers: {
+      "x-forwarded-for": req.headers["x-forwarded-for"],
+      "x-real-ip": req.headers["x-real-ip"],
+      "x-client-ip": req.headers["x-client-ip"],
+    },
   });
 });
 
