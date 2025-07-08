@@ -54,7 +54,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Home page with AI Bot Detection (ChatGPT & Gemini)
+// Home page with AI Bot Detection (ChatGPT, Gemini & Claude)
 app.get("/", async (req, res) => {
   const userAgent = req.get("User-Agent") || "";
   console.log(`User-Agent: ${userAgent}`);
@@ -62,10 +62,14 @@ app.get("/", async (req, res) => {
     userAgent.includes("ChatGPT-User/1.0; +https://openai.com/bot") ||
     userAgent.includes("GPTBot");
   const isGemini = userAgent.includes("Google") || userAgent.includes("Gemini");
+  const isClaude =
+    userAgent.includes("Claude-User/1.0; +Claude-User@anthropic.com") ||
+    userAgent.includes("Claude-User");
 
   console.log(`Request received from User-Agent: ${userAgent}`);
   console.log(`Is ChatGPT Bot: ${isChatGPT}`);
   console.log(`Is Gemini Bot: ${isGemini}`);
+  console.log(`Is Claude Bot: ${isClaude}`);
 
   if (isChatGPT) {
     await logBotDetection(req, "ChatGPT", true);
@@ -89,6 +93,17 @@ app.get("/", async (req, res) => {
       endpoint: "Home page (/) - AI Bot Detection Active",
       logged: "Detection logged to CSV file",
     });
+  } else if (isClaude) {
+    await logBotDetection(req, "Claude", true);
+    res.status(200).json({
+      success: true,
+      botType: "Claude",
+      message: "Claude bot detected successfully!",
+      userAgent: userAgent,
+      timestamp: new Date().toISOString(),
+      endpoint: "Home page (/) - AI Bot Detection Active",
+      logged: "Detection logged to CSV file",
+    });
   } else {
     await logBotDetection(req, "None", false);
     res.status(200).json({
@@ -97,7 +112,7 @@ app.get("/", async (req, res) => {
       userAgent: userAgent,
       timestamp: new Date().toISOString(),
       endpoint: "Home page (/) - AI Bot Detection Active",
-      note: "This endpoint detects ChatGPT (ChatGPT-User/1.0; +https://openai.com/bot) and Gemini (Google) user agents",
+      note: "This endpoint detects ChatGPT (ChatGPT-User/1.0; +https://openai.com/bot), Gemini (Google), and Claude (Claude-User/1.0; +Claude-User@anthropic.com) user agents",
       logged: "Request logged to CSV file",
     });
   }
@@ -156,7 +171,7 @@ app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
   console.log(`Access the API at: http://localhost:${PORT}`);
   console.log(
-    `AI Bot detection (ChatGPT & Gemini) is active on: http://localhost:${PORT}/`
+    `AI Bot detection (ChatGPT, Gemini & Claude) is active on: http://localhost:${PORT}/`
   );
 });
 
