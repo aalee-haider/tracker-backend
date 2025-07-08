@@ -1,0 +1,4 @@
+IP,User Agent,Timestamp,URL,Page Content,Referrer,Keywords,Bot Type,Detected
+::1,vercel-screenshot/1.0,2025-07-08T10:57:04.331Z,http://59e1785e0d23.ngrok-free.app/,Bot Detection API Endpoint,https://tracker-ggllzl72j-aalee-haiders-projects.vercel.app/,"[""bot"",""detection"",""automation"",""none""]",None,false
+::1,WhatsApp/2.2526.2 W,2025-07-08T11:01:28.969Z,http://59e1785e0d23.ngrok-free.app/,Bot Detection API Endpoint,,"[""bot"",""detection"",""automation"",""none""]",None,false
+::1,Google,2025-07-08T11:01:59.497Z,http://59e1785e0d23.ngrok-free.app/,Bot Detection API Endpoint,,"[""bot"",""detection"",""automation"",""gemini""]",Gemini,true
